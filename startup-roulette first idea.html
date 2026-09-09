@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Startup Roulette</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --amber-1:#ffd48a; --amber-2:#ff9a3c; --amber-3:#e8631a;
+    --chrome-1:#ffffff; --chrome-2:#dcdde2; --chrome-3:#b9bac2; --chrome-dark:#8d8e97;
+    --cream:#f4ecd8; --red:#cf1c1c; --red-dark:#8f0f0f; --gold:#d8a63e;
+  }
+  *{box-sizing:border-box;}
+  html,body{overflow-x:hidden;}
+  body{
+    margin:0; min-height:100vh;
+    background: radial-gradient(ellipse at 50% 20%, #1c1c1c 0%, #050505 70%);
+    font-family:'Manrope', sans-serif; color:#eee;
+    display:flex; flex-direction:column; align-items:center;
+    padding: 30px 16px 60px; position: relative;
+  }
+
+  .rays{
+    position:absolute; top:10%; left:50%; width:1100px; height:1100px; margin-left:-550px;
+    background: conic-gradient(from 0deg, rgba(255,170,60,.10) 0deg, transparent 12deg,
+      rgba(255,170,60,.10) 24deg, transparent 36deg, rgba(255,170,60,.10) 48deg, transparent 60deg,
+      rgba(255,170,60,.10) 72deg, transparent 84deg, rgba(255,170,60,.10) 96deg, transparent 108deg,
+      rgba(255,170,60,.10) 120deg, transparent 132deg, rgba(255,170,60,.10) 144deg, transparent 156deg,
+      rgba(255,170,60,.10) 168deg, transparent 180deg, rgba(255,170,60,.10) 192deg, transparent 204deg,
+      rgba(255,170,60,.10) 216deg, transparent 228deg, rgba(255,170,60,.10) 240deg, transparent 252deg,
+      rgba(255,170,60,.10) 264deg, transparent 276deg, rgba(255,170,60,.10) 288deg, transparent 300deg,
+      rgba(255,170,60,.10) 312deg, transparent 324deg, rgba(255,170,60,.10) 336deg, transparent 348deg,
+      rgba(255,170,60,.10) 360deg);
+    border-radius:50%; animation: rays-spin 40s linear infinite; pointer-events:none; z-index:0;
+    mask-image: radial-gradient(circle, black 0%, transparent 60%);
+  }
+  @keyframes rays-spin{ to{ transform:rotate(360deg); } }
+
+  .sparkle{
+    position:absolute; width:4px; height:4px; background:#ffe9b0; border-radius:50%;
+    box-shadow:0 0 6px 2px rgba(255,220,150,.9); animation: twinkle 2.4s ease-in-out infinite;
+    pointer-events:none; z-index:0;
+  }
+  @keyframes twinkle{ 0%,100%{opacity:0; transform:scale(.4);} 50%{opacity:1; transform:scale(1.1);} }
+
+  .side-label{
+    position:fixed; left:10px; top:50%; transform:translateY(-50%) rotate(180deg);
+    writing-mode:vertical-rl; font-family:'Bungee',sans-serif; font-size:12px; letter-spacing:3px;
+    color:var(--amber-2); background:rgba(255,255,255,.04); border:1px solid rgba(216,166,62,.5);
+    border-radius:8px; padding:14px 6px; z-index:5; text-shadow:0 0 8px rgba(255,154,60,.5);
+  }
+
+  .top-banner{
+    position:relative; z-index:2; display:flex; align-items:center; gap:10px;
+    background: linear-gradient(180deg,#241010,#150808); border:1px solid rgba(216,166,62,.45);
+    border-radius:999px; padding:7px 20px; margin-bottom:18px;
+  }
+  .top-banner .chip-bulb{
+    width:6px; height:6px; border-radius:50%; background:var(--amber-1);
+    box-shadow:0 0 6px 2px rgba(255,170,60,.8); animation: chase-pulse 1.4s ease-in-out infinite;
+  }
+  .top-banner span.label{ font-family:'Bungee',sans-serif; font-size:12px; letter-spacing:2px; color:var(--amber-1); }
+
+  .marquee{ text-align:center; margin-bottom:6px; position:relative; z-index:2; }
+  .marquee h1{
+    font-family:'Bungee',sans-serif; font-size:clamp(28px,6vw,46px); letter-spacing:1px; margin:0;
+    background: linear-gradient(180deg,var(--amber-1),var(--amber-3));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation: title-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes title-glow{
+    0%,100%{ filter:drop-shadow(0 3px 8px rgba(255,138,30,.35)); }
+    50%{ filter:drop-shadow(0 3px 18px rgba(255,154,60,.75)); }
+  }
+  .marquee p{ margin:8px 0 0; font-size:15px; color:#c8c8c8; max-width:480px; }
+
+  .status-strip{
+    position:relative; z-index:2; display:flex; align-items:center; gap:10px;
+    background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
+    border-radius:999px; padding:7px 16px; margin-top:16px; font-size:12.5px; color:#e8e8e8;
+    flex-wrap:wrap; justify-content:center; text-align:center;
+  }
+  .status-strip b{ color:var(--amber-1); }
+  .status-strip a{ color:#9fd0ff; cursor:pointer; text-decoration:underline; }
+
+  .machine-wrap{ margin-top:26px; display:flex; align-items:center; gap:6px; position:relative; z-index:2; }
+  .machine{ width:min(720px,88vw); position:relative; filter:drop-shadow(0 24px 40px rgba(0,0,0,.6)); transition: opacity .3s ease, filter .3s ease; }
+  .machine.locked-visual{ filter: drop-shadow(0 24px 40px rgba(0,0,0,.6)) grayscale(.15); }
+
+  .bulb-arc{ display:flex; justify-content:space-between; padding:0 34px; margin-bottom:4px; }
+  .bulb-arc .bulb{
+    width:6px; height:6px; border-radius:50%; background:var(--amber-1);
+    box-shadow:0 0 6px 2px rgba(255,170,60,.85); animation: chase-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes chase-pulse{ 0%,100%{opacity:.25; transform:scale(.8);} 50%{opacity:1; transform:scale(1.15);} }
+
+  .knob{
+    width:34px; height:20px; margin:0 auto; background: linear-gradient(180deg,var(--red) 0%,var(--red-dark) 100%);
+    border-radius:10px 10px 4px 4px; box-shadow:0 2px 4px rgba(0,0,0,.4); position:relative; z-index:2;
+    animation: knob-blink 1.6s ease-in-out infinite;
+  }
+  @keyframes knob-blink{
+    0%,100%{ box-shadow:0 2px 4px rgba(0,0,0,.4), 0 0 0 rgba(255,60,60,0); }
+    50%{ box-shadow:0 2px 4px rgba(0,0,0,.4), 0 0 14px 4px rgba(255,60,60,.6); }
+  }
+
+  .dome{
+    height:46px; margin:-4px 26px 0; border-radius:999px 999px 0 0;
+    background: radial-gradient(120% 180% at 50% 130%, var(--amber-1) 0%, var(--amber-2) 45%, var(--amber-3) 100%);
+    box-shadow: inset 0 6px 10px rgba(255,255,255,.5), inset 0 -8px 14px rgba(150,50,0,.35);
+    position:relative; z-index:1; overflow:hidden;
+  }
+  .dome::after{
+    content:''; position:absolute; top:0; left:-60%; width:40%; height:100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+    animation: dome-shine 3.2s ease-in-out infinite;
+  }
+  @keyframes dome-shine{ 0%{left:-60%;} 45%,100%{left:120%;} }
+
+  .body-panel{
+    background: linear-gradient(180deg,var(--chrome-1) 0%,var(--chrome-2) 40%,var(--chrome-3) 100%);
+    border-radius:22px; padding:20px 18px 24px;
+    box-shadow: inset 0 2px 3px rgba(255,255,255,.9), inset 0 -6px 10px rgba(0,0,0,.15), 0 2px 0 rgba(0,0,0,.08);
+    position:relative; overflow:hidden;
+  }
+
+  .sweep{
+    position:absolute; top:0; left:-30%; width:22%; height:100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.65), transparent);
+    transform: skewX(-18deg); pointer-events:none; z-index:5; opacity:0;
+  }
+  .sweep.run{ animation: sweep-move 1s ease-in-out; }
+  @keyframes sweep-move{ 0%{left:-30%;opacity:0;} 15%{opacity:1;} 85%{opacity:1;} 100%{left:120%;opacity:0;} }
+
+  .badge{
+    width:46px; height:46px; margin:-34px auto 10px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #fff6da, var(--gold) 55%, #a97a1f 100%);
+    box-shadow:0 3px 8px rgba(0,0,0,.35), inset 0 1px 2px rgba(255,255,255,.6);
+    display:flex; align-items:center; justify-content:center; font-family:'Bungee',sans-serif; font-size:15px;
+    color:#6e4a12; position:relative; z-index:2; animation: badge-pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes badge-pulse{
+    0%,100%{ box-shadow:0 3px 8px rgba(0,0,0,.35), inset 0 1px 2px rgba(255,255,255,.6), 0 0 0 rgba(216,166,62,0); }
+    50%{ box-shadow:0 3px 8px rgba(0,0,0,.35), inset 0 1px 2px rgba(255,255,255,.6), 0 0 16px 3px rgba(216,166,62,.7); }
+  }
+
+  .reels{
+    display:grid; grid-template-columns: repeat(3,1fr); gap:3px;
+    background: linear-gradient(180deg,#efe6cf,#d8cba3); border-radius:12px; padding:4px;
+    box-shadow: inset 0 3px 8px rgba(0,0,0,.25); position:relative;
+  }
+  .reels.active{ box-shadow: inset 0 3px 8px rgba(0,0,0,.25), 0 0 18px 3px rgba(255,170,60,.55); }
+  .reel-slot{ display:flex; flex-direction:column; align-items:center; }
+  .reel-label{ font-size:10.5px; font-weight:800; color:#6e5a2e; margin:8px 0 6px; letter-spacing:.3px; }
+
+  .window{
+    width:100%; height:108px;
+    background: linear-gradient(180deg,#fffaf0,var(--cream) 45%,#e9dcb8);
+    border-radius:6px; box-shadow: inset 0 6px 10px rgba(0,0,0,.18), inset 0 -6px 10px rgba(0,0,0,.18);
+    overflow:hidden; position:relative;
+  }
+  .window::before,.window::after{
+    content:''; position:absolute; left:6px; right:6px; height:1.5px; background: rgba(110,90,46,.35); z-index:3;
+  }
+  .window::before{ top:38%; } .window::after{ top:62%; }
+  .strip{ display:flex; flex-direction:column; will-change: transform; }
+  .cell{
+    height:108px; display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:6px 8px; font-weight:800; font-size:14px; color:var(--red); text-shadow:0 1px 0 rgba(0,0,0,.12); line-height:1.2;
+  }
+
+  .base-plate{
+    height:16px; margin:12px 30px 0; background: linear-gradient(180deg,var(--chrome-1),var(--chrome-3));
+    border-radius:0 0 10px 10px; box-shadow: inset 0 2px 3px rgba(255,255,255,.8), 0 6px 10px rgba(0,0,0,.35);
+  }
+  .feet{ display:flex; justify-content:space-between; padding:0 40px; }
+  .foot{ width:34px; height:10px; background: linear-gradient(180deg,var(--chrome-2),var(--chrome-dark)); border-radius:0 0 6px 6px; }
+
+  .lever{
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:230px;
+    cursor:pointer; -webkit-tap-highlight-color:transparent; user-select:none;
+  }
+  .lever-ball{
+    width:26px; height:26px; border-radius:50%;
+    background: radial-gradient(circle at 32% 28%, #ff8b8b, var(--red) 55%, var(--red-dark) 100%);
+    box-shadow:0 3px 6px rgba(0,0,0,.4); animation: ball-glow 1.8s ease-in-out infinite;
+  }
+  @keyframes ball-glow{
+    0%,100%{ box-shadow:0 3px 6px rgba(0,0,0,.4), 0 0 0 rgba(255,60,60,0); }
+    50%{ box-shadow:0 3px 6px rgba(0,0,0,.4), 0 0 10px 3px rgba(255,60,60,.55); }
+  }
+  .lever-rod{
+    width:8px; flex:1; margin-top:-3px;
+    background: linear-gradient(90deg,var(--chrome-dark),var(--chrome-1) 45%,var(--chrome-dark));
+    border-radius:4px; transform-origin: bottom center; transition: transform .18s ease;
+  }
+  .lever-mount{ width:22px; height:14px; background: linear-gradient(180deg,var(--chrome-1),var(--chrome-3)); border-radius:3px; box-shadow:0 2px 4px rgba(0,0,0,.3); }
+  .lever.pulled .lever-rod{ transform: rotate(22deg); }
+  .lever.disabled{ cursor:not-allowed; opacity:.45; }
+  .lever-hint{ font-size:10px; color:#999; margin-top:8px; text-align:center; letter-spacing:.2px; }
+
+  .spin-btn{
+    font-family:'Bungee',sans-serif; font-size:15px; letter-spacing:1px; color:var(--cream);
+    background: linear-gradient(180deg,#e14a4a,var(--red) 60%,var(--red-dark)); border:none; border-radius:999px;
+    padding:13px 34px; cursor:pointer; box-shadow:0 5px 0 #6e0d0d, 0 8px 16px rgba(0,0,0,.4);
+    transition: transform .08s ease; margin-top:18px; position:relative; z-index:2; animation: btn-breathe 2s ease-in-out infinite;
+  }
+  @keyframes btn-breathe{
+    0%,100%{ box-shadow:0 5px 0 #6e0d0d, 0 8px 16px rgba(0,0,0,.4); }
+    50%{ box-shadow:0 5px 0 #6e0d0d, 0 8px 24px rgba(255,60,60,.45); }
+  }
+  .spin-btn:active{ transform: translateY(3px); box-shadow:0 2px 0 #6e0d0d, 0 4px 8px rgba(0,0,0,.4); }
+  .spin-btn:disabled{ opacity:.5; cursor:not-allowed; animation:none; }
+
+  .action-row{ display:flex; gap:14px; align-items:center; justify-content:center; flex-wrap:wrap; margin-top:18px; }
+  .action-row .spin-btn{ margin-top:0; }
+  .keep-btn{
+    font-family:'Bungee',sans-serif; font-size:15px; letter-spacing:1px; color:#3c2c06;
+    background: linear-gradient(180deg,var(--amber-1),var(--gold) 70%,#a97a1f); border:none; border-radius:999px;
+    padding:13px 30px; cursor:pointer; box-shadow:0 5px 0 #7a5a17, 0 8px 16px rgba(0,0,0,.4);
+    transition: transform .08s ease; position:relative; z-index:2;
+  }
+  .keep-btn:active{ transform: translateY(3px); box-shadow:0 2px 0 #7a5a17, 0 4px 8px rgba(0,0,0,.4); }
+  .keep-btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .lock-note{
+    margin-top:16px; font-family:'Bungee',sans-serif; font-size:13px; color:var(--amber-2);
+    letter-spacing:.5px; position:relative; z-index:2; text-align:center;
+  }
+
+  .result{
+    margin-top:26px; max-width:720px; width:100%;
+    background: linear-gradient(180deg,#fffaf0,var(--cream)); border-radius:18px; padding:20px 24px;
+    box-shadow: 0 0 0 3px var(--gold), 0 14px 30px rgba(0,0,0,.5); text-align:center; color:#5a3d10;
+    display:none; position:relative; z-index:2;
+  }
+  .result.show{ display:block; animation: result-in .5s cubic-bezier(.2,.9,.3,1.3); }
+  @keyframes result-in{ 0%{transform:scale(.85) translateY(10px); opacity:0;} 100%{transform:scale(1) translateY(0); opacity:1;} }
+  .result .combo{ font-family:'Bungee',sans-serif; font-size:clamp(15px,3vw,21px); color:var(--red); line-height:1.5; }
+  .result .sub{ font-size:13px; margin-top:4px; color:#7a5d2c; }
+
+  .timer-row{ margin-top:16px; display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
+  .timer{ font-family:'Bungee',sans-serif; font-size:28px; color:var(--red-dark); background:#fff; border-radius:10px; padding:6px 16px; min-width:105px; }
+  .timer.done{ color:var(--red); animation: chase-pulse 1s ease-in-out infinite; }
+
+  .answer-box{ margin-top:18px; text-align:left; }
+  .answer-box textarea{
+    width:100%; min-height:110px; border-radius:12px; border:2px solid #d8cba3; padding:12px 14px;
+    font-family:'Manrope',sans-serif; font-size:14px; resize:vertical; color:#3d2a0c;
+  }
+  .answer-box textarea:disabled{ background:#efe9d8; color:#a08e5f; }
+  .answer-row{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; gap:10px; flex-wrap:wrap; }
+  .submit-btn{
+    font-family:'Manrope',sans-serif; font-weight:800; font-size:13.5px; border:none; border-radius:999px;
+    padding:11px 22px; cursor:pointer; background: var(--red-dark); color:var(--cream);
+  }
+  .submit-btn:disabled{ opacity:.45; cursor:not-allowed; }
+  .submit-note{ font-size:12px; color:#7a5d2c; }
+  .submitted-badge{ font-size:12.5px; color:#2e7d32; font-weight:700; }
+
+  .footer{ margin-top:30px; text-align:center; color:#999; font-size:13px; line-height:1.7; position:relative; z-index:2; }
+  .footer .tag{ font-weight:800; color:var(--amber-2); }
+  .footer .admin-link{ color:#777; cursor:pointer; text-decoration:underline; font-size:11.5px; }
+
+  /* overlay (registration + admin) */
+  .overlay{
+    position:fixed; inset:0; background: rgba(0,0,0,.72); display:none; align-items:center; justify-content:center;
+    z-index:50; padding:20px;
+  }
+  .overlay.show{ display:flex; }
+  .card{
+    background: linear-gradient(180deg,#fffaf0,var(--cream)); border-radius:18px; padding:26px 24px;
+    max-width:420px; width:100%; box-shadow:0 0 0 3px var(--gold), 0 20px 50px rgba(0,0,0,.6); color:#4a340f;
+  }
+  .card h2{ font-family:'Bungee',sans-serif; font-size:18px; color:var(--red-dark); margin:0 0 4px; }
+  .card p.hint{ font-size:12.5px; color:#7a5d2c; margin:0 0 16px; }
+  .card label{ font-size:12px; font-weight:800; color:#6e5a2e; display:block; margin:12px 0 4px; }
+  .card input, .card select{
+    width:100%; padding:10px 12px; border-radius:10px; border:2px solid #d8cba3; font-size:14px; font-family:'Manrope',sans-serif;
+  }
+  .card .go-btn{
+    margin-top:18px; width:100%; font-family:'Bungee',sans-serif; font-size:14px; color:var(--cream);
+    background: linear-gradient(180deg,#e14a4a,var(--red) 60%,var(--red-dark)); border:none; border-radius:999px;
+    padding:13px; cursor:pointer;
+  }
+  .card .err{ color:var(--red); font-size:12px; margin-top:8px; display:none; }
+  .card .close-x{ float:right; cursor:pointer; color:#a08e5f; font-weight:800; }
+
+  .admin-table{ width:100%; border-collapse:collapse; font-size:12px; margin-top:12px; max-height:320px; overflow:auto; display:block; white-space:nowrap; }
+  .admin-table th, .admin-table td{ border:1px solid #d8cba3; padding:5px 7px; text-align:left; }
+  .admin-table th{ background:#e9dcb8; position:sticky; top:0; }
+
+  .st-pending{ color:#9a8b63; }
+  .st-inwindow{ color:#8f6d0f; font-weight:800; }
+  .st-ontime{ color:#1c7a2e; font-weight:800; }
+  .st-late{ color:#b5560f; font-weight:800; }
+  .st-overdue{ color:#fff; font-weight:800; background:var(--red); padding:2px 8px; border-radius:999px; display:inline-block; letter-spacing:.3px; animation: overdue-blink 1s ease-in-out infinite; }
+  @keyframes overdue-blink{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
+  .admin-refresh-row{ display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .admin-refresh-row .go-btn{ margin-top:0; width:auto; padding:9px 16px; font-size:12px; }
+  .admin-refresh-row .auto-note{ font-size:11px; color:#7a5d2c; }
+
+  .confetti-piece{
+    position:fixed; top:-10px; width:8px; height:14px; opacity:.95; z-index:60; pointer-events:none;
+    animation-name: confetti-fall; animation-timing-function: cubic-bezier(.4,.1,.6,.9); animation-fill-mode: forwards;
+  }
+  @keyframes confetti-fall{ 0%{transform:translateY(0) rotate(0deg); opacity:1;} 100%{transform:translateY(105vh) rotate(540deg); opacity:0;} }
+
+  @media (max-width:620px){
+    .window{ height:92px; } .cell{ height:92px; font-size:12.5px; } .lever{ height:190px; } .side-label{ display:none; }
+  }
+  @media (prefers-reduced-motion: reduce){ .strip{ transition:none !important; } *{ animation:none !important; } }
+</style>
+</head>
+<body>
+
+  <div class="rays"></div>
+  <div class="side-label">NIELIT ROPAR</div>
+
+  <div class="top-banner">
+    <span class="chip-bulb"></span>
+    <span class="label">SOCIAL MEDIA CHALLENGE</span>
+    <span class="chip-bulb" style="animation-delay:.4s"></span>
+  </div>
+
+  <div class="marquee">
+    <h1>Startup Roulette</h1>
+    <p>Register, pull the lever (twice, max), then build a startup around whatever you land on — 10 minutes on the clock.</p>
+  </div>
+
+  <div class="status-strip" id="statusStrip" style="display:none;"></div>
+
+  <div class="machine-wrap">
+    <div class="machine" id="machine">
+      <div class="bulb-arc" id="bulbArcTop"></div>
+      <div class="knob"></div>
+      <div class="dome"></div>
+      <div class="body-panel">
+        <div class="sweep" id="sweep"></div>
+        <div class="badge">777</div>
+        <div class="reels" id="reelsBox">
+          <div class="reel-slot"><div class="reel-label">INDUSTRY</div><div class="window"><div class="strip" id="strip0"></div></div></div>
+          <div class="reel-slot"><div class="reel-label">CUSTOMER</div><div class="window"><div class="strip" id="strip1"></div></div></div>
+          <div class="reel-slot"><div class="reel-label">CONSTRAINT</div><div class="window"><div class="strip" id="strip2"></div></div></div>
+        </div>
+        <div class="base-plate"></div>
+        <div class="feet"><div class="foot"></div><div class="foot"></div></div>
+      </div>
+      <div class="bulb-arc" id="bulbArcBottom"></div>
+    </div>
+    <div class="lever" id="lever">
+      <div class="lever-rod" id="leverRod"></div>
+      <div class="lever-ball"></div>
+      <div class="lever-mount"></div>
+      <div class="lever-hint" id="leverHint">pull</div>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="spin-btn" id="spinBtn">SPIN — 2 tries left</button>
+    <button class="keep-btn" id="keepBtn" style="display:none;">✅ Keep this idea</button>
+  </div>
+  <div class="lock-note" id="lockNote" style="display:none;">🔒 Locked — this is your final combo</div>
+
+  <div class="result" id="result">
+    <div class="combo" id="comboText"></div>
+    <div class="sub" id="comboSub">Screenshot this and start building.</div>
+
+    <div class="timer-row" id="timerRow" style="display:none;">
+      <div class="timer" id="timerDisplay">10:00</div>
+    </div>
+
+    <div class="answer-box" id="answerBox" style="display:none;">
+      <label style="font-size:12px;font-weight:800;color:#6e5a2e;">Your startup idea</label>
+      <textarea id="answerText" placeholder="Time's up — write your idea here and submit." disabled></textarea>
+      <div class="answer-row">
+        <span class="submit-note" id="submitNote">Unlocks when the timer hits 0:00</span>
+        <button class="submit-btn" id="submitBtn" disabled>Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Post your idea to your story and tag it <span class="tag">#StartupRoulette</span><br>
+    <span class="admin-link" id="adminLink">Organizer panel</span>
+  </div>
+
+  <!-- registration overlay -->
+  <div class="overlay" id="regOverlay">
+    <div class="card">
+      <h2>Register to play</h2>
+      <p class="hint">One entry per student. This is how your spins and idea get recorded.</p>
+      <label>Full name</label>
+      <input id="regName" placeholder="e.g. Saksham Sharma">
+      <label>Roll number</label>
+      <input id="regRoll" placeholder="e.g. 22CS045">
+      <label>Branch / year (optional)</label>
+      <input id="regBranch" placeholder="e.g. AI&ML, 3rd year">
+      <div class="err" id="regErr">Please fill in your name and roll number.</div>
+      <button class="go-btn" id="regGo">Register &amp; Play</button>
+    </div>
+  </div>
+
+  <!-- admin overlay -->
+  <div class="overlay" id="adminOverlay">
+    <div class="card" style="max-width:860px;">
+      <span class="close-x" id="adminClose">✕</span>
+      <h2>Organizer panel</h2>
+      <div id="adminPinRow">
+        <label>PIN</label>
+        <input id="adminPin" type="password" placeholder="Enter PIN">
+        <button class="go-btn" id="adminGo">Unlock</button>
+        <div class="err" id="adminErr">Incorrect PIN.</div>
+      </div>
+      <div id="adminData" style="display:none;">
+        <p class="hint" id="adminCount"></p>
+        <div class="admin-refresh-row">
+          <button class="go-btn" id="exportBtn">Export to Excel (.csv)</button>
+          <button class="go-btn" id="refreshBtn" style="background:linear-gradient(180deg,#4a7ee1,#1c3fa6 60%,#122a70);">🔄 Refresh now</button>
+          <span class="auto-note">Auto-refreshes every 15s · Status column starts a live stopwatch once the 10-min timer ends</span>
+        </div>
+        <table class="admin-table" id="adminTable"></table>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ============================================================
+  // STORAGE SHIM — makes this file work standalone (no Claude viewer)
+  // Personal data (shared:false) -> saved in this browser only (localStorage)
+  // Shared data (shared:true)    -> saved centrally via a Google Apps Script
+  //                                  Web App backed by a Google Sheet.
+  //
+  // >>> PASTE YOUR DEPLOYED WEB APP URL BELOW <<<
+  // (Google Sheet → Extensions → Apps Script → Deploy → Web app → copy URL)
+  // ============================================================
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby7wO6GrNel1gcbLwpE3rN2SgHnSwe1-HqIMg9Ie97_02vHfOiZhF8vI5x8sivXQNmqOQ/exec";
+
+  // JSONP request helper — bypasses CORS entirely (works from file:// pages,
+  // which is required because Apps Script doesn't send CORS headers for
+  // requests coming from a local "null" origin).
+  function jsonp(url){
+    return new Promise((resolve, reject) => {
+      const cbName = 'cb_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      const timeout = setTimeout(() => { cleanup(); reject(new Error('Request timed out — check your SCRIPT_URL')); }, 15000);
+      function cleanup(){ delete window[cbName]; script.remove(); clearTimeout(timeout); }
+      window[cbName] = (data) => { cleanup(); resolve(data); };
+      script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+      script.onerror = () => { cleanup(); reject(new Error('Could not reach SCRIPT_URL')); };
+      document.body.appendChild(script);
+    });
+  }
+
+  window.storage = {
+    async get(key, shared = false){
+      if(!shared){
+        const v = localStorage.getItem(key);
+        if(v === null) throw new Error('not found');
+        return { key, value: v, shared: false };
+      }
+      const data = await jsonp(`${SCRIPT_URL}?action=get&key=${encodeURIComponent(key)}`);
+      if(!data.found) throw new Error('not found');
+      return { key, value: data.value, shared: true };
+    },
+    async set(key, value, shared = false){
+      if(!shared){
+        localStorage.setItem(key, value);
+        return { key, value, shared: false };
+      }
+      await jsonp(`${SCRIPT_URL}?action=set&key=${encodeURIComponent(key)}&value=${encodeURIComponent(value)}`);
+      return { key, value, shared: true };
+    },
+    async delete(key, shared = false){
+      if(!shared){
+        localStorage.removeItem(key);
+        return { key, deleted: true, shared: false };
+      }
+      await jsonp(`${SCRIPT_URL}?action=delete&key=${encodeURIComponent(key)}`);
+      return { key, deleted: true, shared: true };
+    },
+    async list(prefix = '', shared = false){
+      if(!shared){
+        const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
+        return { keys, prefix, shared: false };
+      }
+      const data = await jsonp(`${SCRIPT_URL}?action=list&prefix=${encodeURIComponent(prefix)}`);
+      return { keys: data.keys, prefix, shared: true };
+    }
+  };
+  // ============================================================
+
+  const industries = ["Education","Food","Healthcare","Transport","Finance","Agriculture","Tourism","Environment","Entertainment","College life"];
+  const customers = ["College students","Working professionals","Parents","Farmers","Senior citizens","Small businesses","Tourists","Children","Government institutions","Local communities"];
+  const constraints = ["Budget: ₹1,000","No mobile app","Must use AI","Must be environmentally friendly","Must work offline","Cannot use paid advertising","Must launch within 7 days","Must have a subscription model","Must solve the problem without technology"];
+  const wheels = [industries, customers, constraints];
+  const strips = [];
+  const MAX_SPINS = 2;
+  const TIMER_SECONDS = 600;
+  const ADMIN_PIN = "2580";
+
+  wheels.forEach((list, idx) => {
+    const strip = document.getElementById('strip'+idx);
+    for(let r=0;r<6;r++){ list.forEach(item => { const c=document.createElement('div'); c.className='cell'; c.textContent=item; strip.appendChild(c); }); }
+    strips.push({el: strip, list});
+  });
+  [document.getElementById('bulbArcTop'), document.getElementById('bulbArcBottom')].forEach(arc => {
+    for(let i=0;i<16;i++){ const b=document.createElement('div'); b.className='bulb'; b.style.animationDelay=(i*0.09)+'s'; arc.appendChild(b); }
+  });
+  for(let i=0;i<24;i++){
+    const sp=document.createElement('div'); sp.className='sparkle';
+    sp.style.left=Math.random()*100+'vw'; sp.style.top=Math.random()*100+'vh';
+    sp.style.animationDelay=(Math.random()*2.4)+'s'; sp.style.animationDuration=(1.8+Math.random()*2)+'s';
+    document.body.appendChild(sp);
+  }
+
+  function currentCellHeight(){ return window.innerWidth <= 620 ? 92 : 108; }
+  function esc(s){ return (s||'').toString().replace(/</g,'&lt;'); }
+  function fmtTime(ts){ return ts ? new Date(ts).toLocaleString() : ''; }
+  // A student's combo is final once they've used both spins, OR they've
+  // chosen to keep their first-spin result via the "Keep this idea" button.
+  function isFinal(rec){ return !!(rec && rec.spins && (rec.spins.length >= MAX_SPINS || rec.locked)); }
+
+  let spinning = false;
+  let record = null;      // current student's shared record
+  let rollno = null;
+  let tickHandle = null;
+
+  const spinBtn=document.getElementById('spinBtn'), keepBtn=document.getElementById('keepBtn'), resultBox=document.getElementById('result'),
+        comboText=document.getElementById('comboText'), comboSub=document.getElementById('comboSub'),
+        lever=document.getElementById('lever'), sweep=document.getElementById('sweep'),
+        reelsBox=document.getElementById('reelsBox'), lockNote=document.getElementById('lockNote'),
+        timerRow=document.getElementById('timerRow'), timerDisplay=document.getElementById('timerDisplay'),
+        answerBox=document.getElementById('answerBox'), answerText=document.getElementById('answerText'),
+        submitBtn=document.getElementById('submitBtn'), submitNote=document.getElementById('submitNote'),
+        statusStrip=document.getElementById('statusStrip'), machine=document.getElementById('machine');
+
+  function spinReel(strip, list, cellH, delay, onDone){
+    const finalIndex = Math.floor(Math.random()*list.length);
+    const targetIndex = list.length*4 + finalIndex;
+    strip.style.transition='none'; strip.style.transform='translateY(0px)'; void strip.offsetHeight;
+    setTimeout(()=>{
+      strip.style.transition = `transform ${2.2+delay*0.3}s cubic-bezier(.12,.85,.18,1)`;
+      strip.style.transform = `translateY(${-(targetIndex*cellH)}px)`;
+    }, delay*120);
+    setTimeout(()=>{ onDone(list[finalIndex]); }, delay*120 + (2.2+delay*0.3)*1000 + 50);
+  }
+
+  function burstConfetti(){
+    const colors=['#cf1c1c','#ff9a3c','#d8a63e','#ffe9b0','#8f0f0f','#fff'];
+    for(let i=0;i<46;i++){
+      const p=document.createElement('div'); p.className='confetti-piece';
+      p.style.left=Math.random()*100+'vw'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
+      p.style.animationDuration=(1.6+Math.random()*1.2)+'s'; p.style.animationDelay=(Math.random()*0.3)+'s';
+      p.style.borderRadius = Math.random()>0.5 ? '50%' : '2px';
+      document.body.appendChild(p); setTimeout(()=>p.remove(),3200);
+    }
+  }
+
+  async function saveRecord(){
+    try{
+      await window.storage.set('student:'+rollno, JSON.stringify(record), true);
+    }catch(e){ console.error('save failed', e); }
+  }
+
+  function spinsLeft(){ return MAX_SPINS - record.spins.length; }
+
+  function renderStatus(){
+    statusStrip.style.display='flex';
+    statusStrip.innerHTML = `<b>${esc(record.name)}</b> · ${esc(record.rollno)} &nbsp;·&nbsp; ${spinsLeft()} spin${spinsLeft()===1?'':'s'} left &nbsp;·&nbsp; <a id="switchLink">not you?</a>`;
+    document.getElementById('switchLink').addEventListener('click', switchStudent);
+  }
+
+  function renderSpinUI(){
+    if(isFinal(record)){
+      spinBtn.style.display='none';
+      keepBtn.style.display='none';
+      lockNote.style.display='block';
+      lever.classList.add('disabled');
+      machine.classList.add('locked-visual');
+    } else {
+      spinBtn.style.display='inline-block';
+      spinBtn.textContent = `SPIN — ${spinsLeft()} tr${spinsLeft()===1?'y':'ies'} left`;
+      lockNote.style.display='none';
+      lever.classList.remove('disabled');
+      machine.classList.remove('locked-visual');
+      // after the first spin (and before the combo is final), let them keep it instead of spinning again
+      keepBtn.style.display = record.spins.length > 0 ? 'inline-block' : 'none';
+      keepBtn.disabled = spinning;
+    }
+  }
+
+  function renderResultFromRecord(){
+    if(record.spins.length === 0) return;
+    const last = record.spins[record.spins.length-1];
+    comboText.textContent = `${last.industry}  +  ${last.customer}  +  ${last.constraint}`;
+    comboSub.textContent = isFinal(record)
+      ? 'This is locked in — build around it.'
+      : 'Love it? Tap "Keep this idea" below. Not happy? You get one more spin.';
+    resultBox.classList.add('show');
+  }
+
+  function renderTimerAndAnswer(){
+    if(!isFinal(record) || !record.timerStartedAt){
+      timerRow.style.display='none'; answerBox.style.display='none'; return;
+    }
+    timerRow.style.display='flex';
+    answerBox.style.display='block';
+
+    function tick(){
+      const remaining = TIMER_SECONDS - Math.floor((Date.now()-record.timerStartedAt)/1000);
+      const clamped = Math.max(0, remaining);
+      const m = Math.floor(clamped/60).toString().padStart(2,'0');
+      const s = (clamped%60).toString().padStart(2,'0');
+      timerDisplay.textContent = `${m}:${s}`;
+      timerDisplay.classList.toggle('done', clamped===0);
+      if(clamped === 0){
+        answerText.disabled = false;
+        submitBtn.disabled = false;
+        submitNote.textContent = record.submittedAt ? `Last submitted ${fmtTime(record.submittedAt)}` : "Time's up — write your idea and submit.";
+        clearInterval(tickHandle);
+      }
+    }
+    clearInterval(tickHandle);
+    tick();
+    tickHandle = setInterval(tick, 1000);
+
+    if(record.submission){ answerText.value = record.submission; }
+    if(record.submittedAt){ submitNote.innerHTML = `<span class="submitted-badge">Submitted ✓</span> ${fmtTime(record.submittedAt)}`; }
+  }
+
+  function renderAll(){
+    renderStatus();
+    renderSpinUI();
+    renderResultFromRecord();
+    renderTimerAndAnswer();
+  }
+
+  function doSpin(){
+    if(spinning || !record || isFinal(record)) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    keepBtn.disabled = true;
+    resultBox.classList.remove('show');
+    reelsBox.classList.add('active');
+    lever.classList.add('pulled'); setTimeout(()=>lever.classList.remove('pulled'),260);
+    sweep.classList.remove('run'); void sweep.offsetWidth; sweep.classList.add('run');
+
+    const cellH = currentCellHeight();
+    const results = [null,null,null];
+    let finished = 0;
+
+    strips.forEach((s,i)=>{
+      spinReel(s.el, s.list, cellH, i, (val)=>{
+        results[i]=val; finished++;
+        if(finished===3){
+          record.spins.push({ industry: results[0], customer: results[1], constraint: results[2], at: Date.now() });
+          if(record.spins.length >= MAX_SPINS){ record.timerStartedAt = Date.now(); }
+          saveRecord();
+          renderAll();
+          spinning=false; spinBtn.disabled=false; keepBtn.disabled=false;
+          reelsBox.classList.remove('active');
+          burstConfetti();
+        }
+      });
+    });
+  }
+  spinBtn.addEventListener('click', doSpin);
+  lever.addEventListener('click', ()=>{ if(!lever.classList.contains('disabled')) doSpin(); });
+
+  // "Keep this idea" — lets a student lock in their FIRST spin instead of
+  // being forced to take the second one, starting the 10-min timer right away.
+  keepBtn.addEventListener('click', async ()=>{
+    if(spinning || !record || record.spins.length===0 || isFinal(record)) return;
+    keepBtn.disabled = true; spinBtn.disabled = true;
+    record.locked = true;
+    record.timerStartedAt = Date.now();
+    await saveRecord();
+    renderAll();
+    burstConfetti();
+  });
+
+  submitBtn.addEventListener('click', async ()=>{
+    const text = answerText.value.trim();
+    if(!text) return;
+    record.submission = text;
+    record.submittedAt = Date.now();
+    await saveRecord();
+    submitNote.innerHTML = `<span class="submitted-badge">Submitted ✓</span> ${fmtTime(record.submittedAt)}`;
+  });
+
+  // ---- registration ----
+  const regOverlay=document.getElementById('regOverlay'), regName=document.getElementById('regName'),
+        regRoll=document.getElementById('regRoll'), regBranch=document.getElementById('regBranch'),
+        regErr=document.getElementById('regErr'), regGo=document.getElementById('regGo');
+
+  regGo.addEventListener('click', async ()=>{
+    const name=regName.value.trim(), roll=regRoll.value.trim(), branch=regBranch.value.trim();
+    if(!name || !roll){ regErr.style.display='block'; return; }
+    regErr.style.display='none';
+    const key = roll.toUpperCase();
+    let existing = null;
+    try{ const r = await window.storage.get('student:'+key, true); existing = r ? JSON.parse(r.value) : null; }catch(e){ existing = null; }
+    record = existing || { name, rollno: key, branch, registeredAt: Date.now(), spins: [], timerStartedAt: null, submission:'', submittedAt:null };
+    if(existing){ record.name = name || existing.name; record.branch = branch || existing.branch; }
+    rollno = key;
+    await saveRecord();
+    try{ await window.storage.set('my-session', JSON.stringify({rollno:key}), false); }catch(e){}
+    regOverlay.classList.remove('show');
+    renderAll();
+  });
+
+  async function switchStudent(){
+    try{ await window.storage.set('my-session', JSON.stringify({rollno:null}), false); }catch(e){}
+    record=null; rollno=null;
+    statusStrip.style.display='none';
+    resultBox.classList.remove('show');
+    spinBtn.style.display='inline-block'; spinBtn.disabled=false; lockNote.style.display='none';
+    keepBtn.style.display='none'; keepBtn.disabled=false;
+    lever.classList.remove('disabled'); machine.classList.remove('locked-visual');
+    regName.value=''; regRoll.value=''; regBranch.value='';
+    regOverlay.classList.add('show');
+  }
+
+  async function init(){
+    let session=null;
+    try{ const r = await window.storage.get('my-session', false); session = r ? JSON.parse(r.value) : null; }catch(e){ session=null; }
+    if(session && session.rollno){
+      try{
+        const r = await window.storage.get('student:'+session.rollno, true);
+        if(r){ record = JSON.parse(r.value); rollno = session.rollno; renderAll(); return; }
+      }catch(e){}
+    }
+    regOverlay.classList.add('show');
+  }
+  init();
+
+  // ---- admin panel ----
+  const adminLink=document.getElementById('adminLink'), adminOverlay=document.getElementById('adminOverlay'),
+        adminClose=document.getElementById('adminClose'), adminPin=document.getElementById('adminPin'),
+        adminGo=document.getElementById('adminGo'), adminErr=document.getElementById('adminErr'),
+        adminData=document.getElementById('adminData'), adminCount=document.getElementById('adminCount'),
+        adminTable=document.getElementById('adminTable'), exportBtn=document.getElementById('exportBtn'),
+        adminPinRow=document.getElementById('adminPinRow'), refreshBtn=document.getElementById('refreshBtn');
+
+  let allRecords = [];
+  let adminStopwatchHandle = null;  // ticks every second, updates live overdue stopwatches
+  let adminAutoRefreshHandle = null; // re-fetches from storage every 15s to catch new submissions
+  let adminLoading = false;
+
+  // Works out, for one student record, where they stand relative to the
+  // 10-minute submission window (which starts the moment their timer
+  // begins, i.e. right after their final spin).
+  function rowStatus(rec){
+    const timerRunning = isFinal(rec) && rec.timerStartedAt;
+    if(!timerRunning) return { type:'pending' };
+    const deadline = rec.timerStartedAt + TIMER_SECONDS*1000;
+    if(rec.submittedAt){
+      const diffMs = rec.submittedAt - deadline;
+      return diffMs <= 0 ? { type:'ontime', deadline } : { type:'late', deadline, lateMs: diffMs };
+    }
+    return Date.now() < deadline ? { type:'inwindow', deadline } : { type:'overdue', deadline };
+  }
+
+  function fmtDur(ms){
+    const s = Math.max(0, Math.floor(ms/1000));
+    const m = Math.floor(s/60).toString().padStart(2,'0');
+    const ss = (s%60).toString().padStart(2,'0');
+    return `${m}:${ss}`;
+  }
+
+  function statusCellHtml(rec){
+    const st = rowStatus(rec);
+    if(st.type==='pending')  return `<span class="st-pending">— not spun out yet</span>`;
+    if(st.type==='inwindow') return `<span class="st-inwindow">⏳ In 10-min window</span>`;
+    if(st.type==='ontime')   return `<span class="st-ontime">✅ Submitted on time</span>`;
+    if(st.type==='late')     return `<span class="st-late">⚠️ Submitted ${fmtDur(st.lateMs)} late</span>`;
+    // overdue: timer's up, nothing submitted yet — live stopwatch counting up from the deadline
+    return `<span class="st-overdue" data-deadline="${st.deadline}" data-rollno="${esc(rec.rollno)}">🔴 ${fmtDur(Date.now()-st.deadline)} overdue</span>`;
+  }
+
+  function renderAdminTable(){
+    adminCount.textContent = `${allRecords.length} student(s) registered.`;
+    let html = '<tr><th>Name</th><th>Roll No</th><th>Branch</th><th>Spins</th><th>Final Combo</th>'
+      + '<th>Timer Ended</th><th>Submitted At</th><th>Status</th></tr>';
+    allRecords.forEach(rec=>{
+      const last = rec.spins && rec.spins.length ? rec.spins[rec.spins.length-1] : null;
+      const combo = last ? `${last.industry} + ${last.customer} + ${last.constraint}` : '—';
+      const timerRunning = isFinal(rec) && rec.timerStartedAt;
+      const deadlineTxt = timerRunning ? fmtTime(rec.timerStartedAt + TIMER_SECONDS*1000) : '—';
+      html += `<tr><td>${esc(rec.name)}</td><td>${esc(rec.rollno)}</td><td>${esc(rec.branch)}</td>`
+        + `<td>${rec.spins?rec.spins.length:0}</td><td>${esc(combo)}</td>`
+        + `<td>${deadlineTxt}</td><td>${rec.submittedAt?fmtTime(rec.submittedAt):'—'}</td>`
+        + `<td>${statusCellHtml(rec)}</td></tr>`;
+    });
+    adminTable.innerHTML = html;
+  }
+
+  // Every second, tick the live stopwatches for anyone past their deadline
+  // who hasn't submitted yet, without re-rendering the whole table.
+  function startAdminStopwatch(){
+    clearInterval(adminStopwatchHandle);
+    adminStopwatchHandle = setInterval(()=>{
+      if(adminData.style.display === 'none') return;
+      adminTable.querySelectorAll('.st-overdue[data-deadline]').forEach(el=>{
+        const deadline = Number(el.getAttribute('data-deadline'));
+        el.textContent = `🔴 ${fmtDur(Date.now()-deadline)} overdue`;
+      });
+    }, 1000);
+  }
+
+  async function loadAdminData(){
+    if(adminLoading) return;
+    adminLoading = true;
+    try{
+      const listRes = await window.storage.list('student:', true);
+      const keys = listRes && listRes.keys ? listRes.keys : [];
+      const records = [];
+      for(const k of keys){
+        try{ const r = await window.storage.get(k, true); if(r) records.push(JSON.parse(r.value)); }catch(e){}
+      }
+      allRecords = records;
+      renderAdminTable();
+    }catch(e){
+      adminCount.textContent = 'Could not load data.';
+    }
+    adminLoading = false;
+  }
+
+  adminLink.addEventListener('click', ()=>{ adminOverlay.classList.add('show'); });
+  adminClose.addEventListener('click', ()=>{
+    adminOverlay.classList.remove('show'); adminData.style.display='none'; adminPinRow.style.display='block';
+    adminPin.value=''; adminErr.style.display='none';
+    clearInterval(adminStopwatchHandle); clearInterval(adminAutoRefreshHandle);
+  });
+
+  adminGo.addEventListener('click', async ()=>{
+    if(adminPin.value !== ADMIN_PIN){ adminErr.style.display='block'; return; }
+    adminErr.style.display='none';
+    adminGo.textContent='Loading...';
+    await loadAdminData();
+    adminPinRow.style.display='none';
+    adminData.style.display='block';
+    adminGo.textContent='Unlock';
+    startAdminStopwatch();
+    clearInterval(adminAutoRefreshHandle);
+    adminAutoRefreshHandle = setInterval(loadAdminData, 15000);
+  });
+
+  refreshBtn.addEventListener('click', ()=>{
+    refreshBtn.textContent='🔄 Refreshing...';
+    loadAdminData().then(()=>{ refreshBtn.textContent='🔄 Refresh now'; });
+  });
+
+  exportBtn.addEventListener('click', ()=>{
+    const headers = ['Name','Roll No','Branch','Registered At','Spin 1','Spin 2','Final Combo','Timer Started','Deadline (Timer+10min)','Submission','Submitted At','Status','Late By (mm:ss)'];
+    const rows = allRecords.map(rec=>{
+      const s1 = rec.spins && rec.spins[0] ? `${rec.spins[0].industry} + ${rec.spins[0].customer} + ${rec.spins[0].constraint}` : '';
+      const s2 = rec.spins && rec.spins[1] ? `${rec.spins[1].industry} + ${rec.spins[1].customer} + ${rec.spins[1].constraint}` : '';
+      const final = rec.spins && rec.spins.length ? (rec.spins.length>1?s2:s1) : '';
+      const deadline = (isFinal(rec) && rec.timerStartedAt) ? rec.timerStartedAt + TIMER_SECONDS*1000 : null;
+      const st = rowStatus(rec);
+      const statusLabel = { pending:'Not spun out yet', inwindow:'In 10-min window', ontime:'On time', late:'Late', overdue:'OVERDUE (not submitted)' }[st.type] || '';
+      const lateBy = st.type==='late' ? fmtDur(st.lateMs) : (st.type==='overdue' ? fmtDur(Date.now()-st.deadline) : '');
+      return [rec.name, rec.rollno, rec.branch||'', fmtTime(rec.registeredAt), s1, s2, final, fmtTime(rec.timerStartedAt), fmtTime(deadline), (rec.submission||'').replace(/\n/g,' '), fmtTime(rec.submittedAt), statusLabel, lateBy];
+    });
+    const csvLines = [headers, ...rows].map(row => row.map(cell=>{
+      const v = (cell===undefined||cell===null) ? '' : String(cell);
+      return '"'+v.replace(/"/g,'""')+'"';
+    }).join(',')).join('\r\n');
+    const blob = new Blob([csvLines], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download='startup-roulette-data.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+</script>
+
+</body>
+</html>
