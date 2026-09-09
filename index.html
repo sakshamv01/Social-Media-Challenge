@@ -405,7 +405,7 @@
 
   <!-- admin overlay -->
   <div class="overlay" id="adminOverlay">
-    <div class="card" style="max-width:860px;">
+    <div class="card" style="max-width:980px;">
       <span class="close-x" id="adminClose">✕</span>
       <h2>Organizer panel</h2>
       <div id="adminPinRow">
@@ -454,6 +454,14 @@
     });
   }
 
+  // If we're running inside a Claude artifact, Anthropic already injects a
+  // real, working window.storage before this script runs — don't touch it.
+  // Only install our own localStorage + Google Sheet shim when there's no
+  // native storage available (e.g. self-hosted on GitHub Pages, or opened
+  // directly as a local file). This lets the SAME file work in both places.
+  const hasNativeStorage = typeof window.storage !== 'undefined' && typeof window.storage.get === 'function';
+
+  if(!hasNativeStorage){
   window.storage = {
     async get(key, shared = false){
       if(!shared){
@@ -490,6 +498,7 @@
       return { keys: data.keys, prefix, shared: true };
     }
   };
+  }
   // ============================================================
 
   const industries = ["Education","Food","Healthcare","Transport","Finance","Agriculture","Tourism","Environment","Entertainment","College life"];
@@ -519,6 +528,10 @@
   function currentCellHeight(){ return window.innerWidth <= 620 ? 92 : 108; }
   function esc(s){ return (s||'').toString().replace(/</g,'&lt;'); }
   function fmtTime(ts){ return ts ? new Date(ts).toLocaleString() : ''; }
+  // Minute-precision clock time (no date, no seconds) — e.g. "3:31 PM".
+  // Used for Registered At / Timer Started, since organizers only care
+  // about the minute something happened, not the exact second.
+  function fmtClock(ts){ return ts ? new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''; }
   // A student's combo is final once they've used both spins, OR they've
   // chosen to keep their first-spin result via the "Keep this idea" button.
   function isFinal(rec){ return !!(rec && rec.spins && (rec.spins.length >= MAX_SPINS || rec.locked)); }
@@ -657,7 +670,7 @@
         results[i]=val; finished++;
         if(finished===3){
           record.spins.push({ industry: results[0], customer: results[1], constraint: results[2], at: Date.now() });
-          if(record.spins.length >= MAX_SPINS){ record.timerStartedAt = Date.now(); }
+          if(record.spins.length >= MAX_SPINS){ record.timerStartedAt = Date.now(); record.timerStartedAtMin = fmtClock(record.timerStartedAt); }
           saveRecord();
           renderAll();
           spinning=false; spinBtn.disabled=false; keepBtn.disabled=false;
@@ -677,6 +690,7 @@
     keepBtn.disabled = true; spinBtn.disabled = true;
     record.locked = true;
     record.timerStartedAt = Date.now();
+    record.timerStartedAtMin = fmtClock(record.timerStartedAt);
     await saveRecord();
     renderAll();
     burstConfetti();
@@ -703,7 +717,7 @@
     const key = roll.toUpperCase();
     let existing = null;
     try{ const r = await window.storage.get('student:'+key, true); existing = r ? JSON.parse(r.value) : null; }catch(e){ existing = null; }
-    record = existing || { name, rollno: key, branch, registeredAt: Date.now(), spins: [], timerStartedAt: null, submission:'', submittedAt:null };
+    record = existing || { name, rollno: key, branch, registeredAt: Date.now(), registeredAtMin: fmtClock(Date.now()), spins: [], timerStartedAt: null, submission:'', submittedAt:null };
     if(existing){ record.name = name || existing.name; record.branch = branch || existing.branch; }
     rollno = key;
     await saveRecord();
@@ -783,16 +797,18 @@
 
   function renderAdminTable(){
     adminCount.textContent = `${allRecords.length} student(s) registered.`;
-    let html = '<tr><th>Name</th><th>Roll No</th><th>Branch</th><th>Spins</th><th>Final Combo</th>'
-      + '<th>Timer Ended</th><th>Submitted At</th><th>Status</th></tr>';
+    let html = '<tr><th>Name</th><th>Roll No</th><th>Branch</th><th>Registered</th><th>Spins</th><th>Final Combo</th>'
+      + '<th>Timer Started</th><th>Timer Ended</th><th>Submitted At</th><th>Status</th></tr>';
     allRecords.forEach(rec=>{
       const last = rec.spins && rec.spins.length ? rec.spins[rec.spins.length-1] : null;
       const combo = last ? `${last.industry} + ${last.customer} + ${last.constraint}` : '—';
       const timerRunning = isFinal(rec) && rec.timerStartedAt;
-      const deadlineTxt = timerRunning ? fmtTime(rec.timerStartedAt + TIMER_SECONDS*1000) : '—';
+      const registeredTxt = rec.registeredAt ? fmtClock(rec.registeredAt) : '—';
+      const startedTxt = timerRunning ? fmtClock(rec.timerStartedAt) : '—';
+      const deadlineTxt = timerRunning ? fmtClock(rec.timerStartedAt + TIMER_SECONDS*1000) : '—';
       html += `<tr><td>${esc(rec.name)}</td><td>${esc(rec.rollno)}</td><td>${esc(rec.branch)}</td>`
-        + `<td>${rec.spins?rec.spins.length:0}</td><td>${esc(combo)}</td>`
-        + `<td>${deadlineTxt}</td><td>${rec.submittedAt?fmtTime(rec.submittedAt):'—'}</td>`
+        + `<td>${registeredTxt}</td><td>${rec.spins?rec.spins.length:0}</td><td>${esc(combo)}</td>`
+        + `<td>${startedTxt}</td><td>${deadlineTxt}</td><td>${rec.submittedAt?fmtClock(rec.submittedAt):'—'}</td>`
         + `<td>${statusCellHtml(rec)}</td></tr>`;
     });
     adminTable.innerHTML = html;
@@ -864,7 +880,7 @@
       const st = rowStatus(rec);
       const statusLabel = { pending:'Not spun out yet', inwindow:'In 10-min window', ontime:'On time', late:'Late', overdue:'OVERDUE (not submitted)' }[st.type] || '';
       const lateBy = st.type==='late' ? fmtDur(st.lateMs) : (st.type==='overdue' ? fmtDur(Date.now()-st.deadline) : '');
-      return [rec.name, rec.rollno, rec.branch||'', fmtTime(rec.registeredAt), s1, s2, final, fmtTime(rec.timerStartedAt), fmtTime(deadline), (rec.submission||'').replace(/\n/g,' '), fmtTime(rec.submittedAt), statusLabel, lateBy];
+      return [rec.name, rec.rollno, rec.branch||'', fmtClock(rec.registeredAt), s1, s2, final, fmtClock(rec.timerStartedAt), fmtClock(deadline), (rec.submission||'').replace(/\n/g,' '), fmtClock(rec.submittedAt), statusLabel, lateBy];
     });
     const csvLines = [headers, ...rows].map(row => row.map(cell=>{
       const v = (cell===undefined||cell===null) ? '' : String(cell);
